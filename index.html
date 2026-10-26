@@ -23,7 +23,7 @@
   /*HABITS_CONF*/ в <head> не удалять — её подставляет server.js.
 ============================================================================= -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#ECE2D6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#f5f3f9" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#141210" media="(prefers-color-scheme: dark)">
 <meta name="color-scheme" content="light dark">
 <meta name="description" content="Трекер привычек с заметками и статистикой">
@@ -1780,6 +1780,28 @@ html{-webkit-text-size-adjust:100%}
 body{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 input,textarea,[contenteditable],[contenteditable] *{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 img,svg{-webkit-user-drag:none}
+/* ===== Экран-оффер (показывается один раз при первом открытии) ===== */
+.offer-overlay{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;
+  padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px));
+  background:rgba(20,16,30,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);
+  opacity:0;visibility:hidden;transition:opacity .25s ease,visibility .25s}
+.offer-overlay.show{opacity:1;visibility:visible}
+.offer-card{width:100%;max-width:380px;max-height:100%;overflow-y:auto;box-sizing:border-box;text-align:center;
+  background:var(--card-solid,#fff);color:var(--text,#222);border-radius:24px;padding:28px 22px 18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);transform:translateY(24px) scale(.96);transition:transform .3s cubic-bezier(.2,.9,.3,1.1)}
+.offer-overlay.show .offer-card{transform:none}
+.offer-emoji{font-size:64px;line-height:1;margin-bottom:12px}
+.offer-title{margin:0 0 8px;font-size:22px;line-height:1.25;font-weight:800}
+.offer-sub{margin:0 0 16px;font-size:15px;line-height:1.4;color:var(--muted,#777)}
+.offer-list{list-style:none;margin:0 0 20px;padding:0;text-align:left;font-size:15px;line-height:1.4}
+.offer-list li{position:relative;padding:6px 0 6px 26px}
+.offer-list li::before{content:'•';position:absolute;left:8px;color:#2AABEE;font-weight:900}
+.offer-btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:14px;
+  background:#2AABEE;color:#fff;font-size:17px;font-weight:700;line-height:1.2;font-family:inherit;cursor:pointer;
+  box-shadow:0 6px 18px rgba(42,171,238,.4);transition:transform .15s,filter .15s}
+.offer-btn:active{transform:scale(.98);filter:brightness(.95)}
+.offer-skip{display:block;width:100%;min-height:48px;margin-top:6px;border:0;background:none;
+  color:var(--muted,#777);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer}
 </style>
 </head>
 <body>
@@ -2029,7 +2051,7 @@ img,svg{-webkit-user-drag:none}
 
 /* ===== i18n ===== */
 const LANG_KEY='habits-lang';
-let appLang=(function(){try{const s=localStorage.getItem(LANG_KEY);if(s==='en'||s==='ru')return s}catch(_e){}return 'ru'})();
+let appLang=(function(){try{const s=localStorage.getItem(LANG_KEY);if(s==='en'||s==='ru')return s}catch(_e){}try{var l=(((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe||{}).user||{}).language_code||navigator.language||'ru');return /^(ru|uk|be|kk)/i.test(l)?'ru':'en'}catch(_e){}return 'ru'})();
 const I18N={
 ru:{
   // nav & headers
@@ -2052,7 +2074,7 @@ ru:{
   no_notes_yet:'Пока нет заметок',nothing_found:'Ничего не найдено',untitled:'Без названия',
   marker:'Маркер',color:'Цвет',style_label:'Стиль',
   // wheel
-    sphere_health:'Здоровье',sphere_career:'Карьера',sphere_finance:'Финансы',sphere_love:'Отношения',
+    sphere_health:'Здоровье',sphere_career:'Карьера',sphere_finance:'Финансы',sphere_love:'Духовность',
   sphere_growth:'Рост',sphere_family:'Семья',sphere_fun:'Отдых',sphere_env:'Окружение',
   life_web:'Паутина жизни',spheres_list:'Список сфер',spheres:'Сферы',score:'Оценка',
   notes_label:'Заметки',score_history:'История оценки',
@@ -2081,7 +2103,7 @@ ru:{
   own_quote:'Своя цитата…',double_tap:'Двойной тап для отметки',week_num:'Номер недели',short_dates:'Короткие даты',
   sort:'Сортировка',week_starts:'Неделя с',default_norm:'Норма по умолчанию',
   from_mon:'Понедельника',from_sun:'Воскресенья',
-  share_app:'Поделиться',
+  share_app:'Поделиться с другом',
   backup_remind:'Напоминать о бэкапе',export:'Экспорт',import_json:'Импорт JSON',from_code:'Из кода',
   to_clipboard:'В буфер',notes_txt:'Заметки .txt',storage_info:'Хранилище',reset_all:'Сбросить все данные…',
   about_text:'Habits · локальный трекер привычек и заметок. Данные только на устройстве.',
@@ -2180,7 +2202,7 @@ en:{
   deleted:'Deleted',saved:'Saved',select_text:'Select text first',
   no_notes_yet:'No notes yet',nothing_found:'Nothing found',untitled:'Untitled',
   marker:'Marker',color:'Color',style_label:'Style',
-    sphere_health:'Health',sphere_career:'Career',sphere_finance:'Finance',sphere_love:'Relationships',
+    sphere_health:'Health',sphere_career:'Career',sphere_finance:'Finance',sphere_love:'Spirituality',
   sphere_growth:'Growth',sphere_family:'Family',sphere_fun:'Leisure',sphere_env:'Environment',
   sec_quotes:'Quotes',daily_quote:'Daily quote',quote_by_day:'By day',quote_fixed_btn:'Pin',
   life_web:'Life wheel',spheres_list:'Spheres',spheres:'Spheres',score:'Score',
@@ -2208,7 +2230,7 @@ en:{
   own_quote:'Your quote…',double_tap:'Double-tap to check',week_num:'Week number',short_dates:'Short dates',
   sort:'Sort',week_starts:'Week starts',default_norm:'Default target',
   from_mon:'Monday',from_sun:'Sunday',
-  share_app:'Share',
+  share_app:'Share with a friend',
   backup_remind:'Remind about backup',export:'Export',import_json:'Import JSON',from_code:'From code',
   to_clipboard:'Copy',notes_txt:'Notes .txt',storage_info:'Storage',reset_all:'Reset all data…',
   about_text:'Habits · local habit & notes tracker. Data stays on this device only.',
@@ -2506,7 +2528,7 @@ const NORM_FEATURE_KEY='habits-show-norm-feature';
 const YEAR_MARKS_KEY='habits-year-marks';
 let habits=(appLang==='en'?[{name:'Read 30 min',goal:'Read 12 books',checked:{},target:1,showTarget:false},{name:'Water 2L',goal:'Drink water daily',checked:{},target:6,showTarget:true}]:[{name:'Читать 30 мин',goal:'Прочитать 12 книг',checked:{},target:1,showTarget:false},{name:'Вода 2л',goal:'Пить воду каждый день',checked:{},target:6,showTarget:true}]);
 window.selectedCalendarYear=window.selectedCalendarYear||new Date().getFullYear();
-let currentHabit=0,currentMonth=new Date().getMonth(),currentView='dashboard',themeHue=35,currentTheme='cream',showNormFeature=true,currentScale=0.85;
+let currentHabit=0,currentMonth=new Date().getMonth(),currentView='dashboard',themeHue=35,currentTheme='lavender',showNormFeature=true,currentScale=0.85;
 let dragIndex=null;
 let dragHabitIndex=null;
 let yearMarks={};
@@ -2527,7 +2549,7 @@ const DEFAULT_SPHERES=[
   {id:'health',name:'Здоровье',score:5},
   {id:'career',name:'Карьера',score:5},
   {id:'finance',name:'Финансы',score:5},
-  {id:'love',name:'Отношения',score:5},
+  {id:'love',name:'Духовность',score:5},
   {id:'growth',name:'Рост',score:5},
   {id:'family',name:'Семья',score:5},
   {id:'fun',name:'Отдых',score:5},
@@ -2556,9 +2578,11 @@ function translateLifeSpheresForLang(prevLang, nextLang){
       const enDef=sphereDefaultName(id,'en');
       const prevDef=sphereDefaultName(id, prevLang||'ru');
       const cur=String(s.name||'').trim();
+      /* прежние названия сферы (до переименования в «Духовность») тоже считаются стандартными */
+      const legacy=(id==='love')?['Отношения','Relationships','Love']:[];
       // Built-in sphere: rename if current name is any known default (or empty)
       if(SPHERE_IDS.indexOf(id)>=0){
-        if(!cur || cur===prevDef || cur===ruDef || cur===enDef){
+        if(!cur || cur===prevDef || cur===ruDef || cur===enDef || legacy.indexOf(cur)>=0){
           if(cur!==nextDef){s.name=nextDef;changed=true}
         }
       }
@@ -3692,9 +3716,9 @@ function setAppearanceMode(mode){
   localStorage.setItem(APPEARANCE_KEY,mode);
   if(mode==='auto'){
     const dark=window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyThemeId(dark?'graphite':'cream',false);
+    applyThemeId(dark?'graphite':'lavender',false);
   }else if(mode==='light'){
-    applyThemeId('cream',false);
+    applyThemeId('lavender',false);
   }else if(mode==='dark'){
     applyThemeId('graphite',false);
   }
@@ -3755,21 +3779,22 @@ function loadTheme(){
   appearanceMode=mode||'manual';
   if(appearanceMode==='auto'){
     const dark=window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyThemeId(dark?'graphite':'cream',false);
+    applyThemeId(dark?'graphite':'lavender',false);
   }else if(appearanceMode==='light'){
-    applyThemeId('cream',false);
+    applyThemeId('lavender',false);
   }else if(appearanceMode==='dark'){
     applyThemeId('graphite',false);
   }else{
     let saved=localStorage.getItem(THEME_KEY);
     if(saved==='light'||saved==='white')saved='cream';
-    applyThemeId(saved||'cream',false);
+    saved=saved||'lavender';
+    applyThemeId(saved,false);
   }
   updateAppearanceChips();
   renderThemePresets();
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',e=>{
     if(appearanceMode!=='auto')return;
-    applyThemeId(e.matches?'graphite':'cream',false);
+    applyThemeId(e.matches?'graphite':'lavender',false);
     renderThemePresets();
   });
 }
@@ -3952,7 +3977,7 @@ function applyAccentCss(css){
 }
 function applyColors(){
   // Accents are always derived from the active theme (pastel palette)
-  applyThemePastelAccent(currentTheme||'cream');
+  applyThemePastelAccent(currentTheme||'lavender');
   const slider=document.getElementById('hueSlider');
   if(slider)slider.value=themeHue;
   try{renderHuePresets()}catch(_e){}
@@ -7775,20 +7800,12 @@ function seed(){
     var u=(tg.initDataUnsafe||{}).user||{};
     if(!LS.getItem('habits-lang')&&u.language_code)_set.call(LS,'habits-lang',/^(ru|uk|be|kk)/.test(u.language_code)?'ru':'en');
     _rem.call(LS,'habits-pin-on');_rem.call(LS,'habits-pin-code');
-    if(!LS.getItem('habits-appearance-mode'))_set.call(LS,'habits-appearance-mode','auto');
+    /* Тема НЕ зависит от темы Telegram: базовая — лаванда. Один раз сбрасываем старый режим «Авто» */
+    if(!LS.getItem('habits-theme-migrated-v1')){
+      if(LS.getItem('habits-appearance-mode')==='auto')_set.call(LS,'habits-appearance-mode','manual');
+      _set.call(LS,'habits-theme-migrated-v1','1');
+    }
   }catch(e){}
-  /* тема приложения следует теме Telegram */
-  var _mm=window.matchMedia.bind(window),ls=[];
-  function fake(){
-    return {matches:tg.colorScheme==='dark',media:'(prefers-color-scheme: dark)',onchange:null,
-      addEventListener:function(t,f){ls.push(f)},removeEventListener:function(t,f){ls=ls.filter(function(x){return x!==f})},
-      addListener:function(f){ls.push(f)},removeListener:function(f){ls=ls.filter(function(x){return x!==f})},
-      dispatchEvent:function(){return false}};
-  }
-  window.matchMedia=function(q){
-    return String(q).replace(/\s+/g,'').toLowerCase()==='(prefers-color-scheme:dark)'?fake():_mm(q);
-  };
-  tg.onEvent('themeChanged',function(){ls.slice().forEach(function(f){f({matches:tg.colorScheme==='dark'})})});
 }
 function go(){if(started)return;started=true;seed();run()}
 
@@ -7840,8 +7857,8 @@ function native(){
   /* поделиться: реферальная ссылка на Mini App */
   window.shareApp=function(){
     var u=(tg.initDataUnsafe||{}).user||{},c=window.HABITS_CONF||{};
-    if(!c.bot){toast(appLang==='en'?'Share link is not configured':'Ссылка для шеринга не настроена');return}
-    var link='https://t.me/'+c.bot+(c.app?'/'+c.app:'')+'?startapp=ref_'+(u.id||'');
+    /* ссылка на бота (имя берём из настроек сервера или запасное) + реферальный параметр */
+    var link='https://t.me/'+(c.bot||'bloom_habits_bot')+'?start=ref_'+(u.id||'');
     var text=appLang==='en'?'Track your habits with me 💪':'Давай вместе отслеживать привычки 💪';
     tg.openTelegramLink('https://t.me/share/url?url='+encodeURIComponent(link)+'&text='+encodeURIComponent(text));
   };
@@ -7890,6 +7907,121 @@ else{
     if(started){if(changed)location.reload()}else go();
   }).catch(function(e){console.warn('pull',e);go()});
 }
+})();
+</script>
+
+<!-- ===== Экран приветствия (онбординг): показывается один раз, до оффера ===== -->
+<div class="offer-overlay" id="onbOverlay" role="dialog" aria-modal="true" aria-labelledby="onbTitle">
+  <div class="offer-card">
+    <div class="offer-emoji">👋</div>
+    <h2 class="offer-title" id="onbTitle"></h2>
+    <p class="offer-sub" id="onbSub"></p>
+    <ul class="offer-list" id="onbList"></ul>
+    <button class="offer-btn" id="onbBtn" type="button"></button>
+  </div>
+</div>
+<script>
+/* Онбординг: обращение по имени из Telegram, 3 пункта «что здесь можно сделать», кнопка «Начать».
+   Один раз (флаг onboarding_seen_v1). Тексты — объект ONB; язык = язык приложения (по телефону).
+   Показать снова: удалить ключ onboarding_seen_v1. */
+(function(){
+  'use strict';
+  var KEY='onboarding_seen_v1';
+  var ONB={
+    ru:{hi:'Привет',hiNo:'Привет!',sub:'Это Habits — спокойный трекер привычек. Вот что здесь можно делать:',
+        list:['Отмечать привычки каждый день и следить за серией','Ставить цели и записывать мысли в заметки','Смотреть прогресс в статистике и «Колесе жизни»'],btn:'Начать'},
+    en:{hi:'Hi',hiNo:'Hi there!',sub:'This is Habits, a calm habit tracker. Here is what you can do:',
+        list:['Check in your habits every day and keep your streak','Set goals and jot down thoughts in notes','See your progress in stats and the Wheel of Life'],btn:'Get started'}
+  };
+  function seen(){try{return localStorage.getItem(KEY)==='1'}catch(e){return false}}
+  function lang(){try{return(typeof appLang!=='undefined'&&appLang==='en')?'en':'ru'}catch(e){return'ru'}}
+  if(seen())return;
+  var ov=document.getElementById('onbOverlay');
+  function name(){try{var u=(window.Telegram.WebApp.initDataUnsafe||{}).user;return u&&u.first_name?String(u.first_name):''}catch(e){return''}}
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function close(){
+    try{localStorage.setItem(KEY,'1')}catch(e){}
+    ov.classList.remove('show');setTimeout(function(){ov.style.display='none'},300);
+    window.dispatchEvent(new Event('onboarding-done'));
+  }
+  function open(){
+    var o=ONB[lang()],n=name();
+    document.getElementById('onbTitle').innerHTML=n?esc(o.hi)+', '+esc(n)+'!':esc(o.hiNo);
+    document.getElementById('onbSub').textContent=o.sub;
+    document.getElementById('onbList').innerHTML=o.list.map(function(s){return'<li>'+s+'</li>'}).join('');
+    document.getElementById('onbBtn').textContent=o.btn;
+    requestAnimationFrame(function(){ov.classList.add('show')});
+  }
+  document.getElementById('onbBtn').onclick=close;
+  var iv=setInterval(function(){
+    var c=document.getElementById('content');
+    if(seen()){clearInterval(iv);return}
+    if(c&&c.innerText.trim().length>5){clearInterval(iv);setTimeout(open,300)}
+  },150);
+})();
+</script>
+
+<!-- ===== Экран-оффер: разметка. Тексты и логика — в скрипте ниже ===== -->
+<div class="offer-overlay" id="offerOverlay" role="dialog" aria-modal="true" aria-labelledby="offerTitle">
+  <div class="offer-card">
+    <div class="offer-emoji" id="offerEmoji">🔔</div>
+    <h2 class="offer-title" id="offerTitle"></h2>
+    <p class="offer-sub" id="offerSub"></p>
+    <ul class="offer-list" id="offerList"></ul>
+    <button class="offer-btn" id="offerBtn" type="button"></button>
+    <button class="offer-skip" id="offerSkip" type="button"></button>
+  </div>
+</div>
+<script>
+/* Экран-оффер: показывается ОДИН РАЗ при первом открытии (флаг в localStorage).
+   Где менять: тексты — объект OFFER ниже; имя бота — config.js (HABITS_CONF.bot) или BOT_FALLBACK;
+   чтобы показать оффер снова — удалить ключ offer_seen_v1 в localStorage. */
+(function(){
+  'use strict';
+  var KEY='offer_seen_v1',BOT_FALLBACK='bloom_habits_bot';
+  var OFFER={
+    ru:{emoji:'🔔',title:'Напоминания о привычках в Telegram',
+        sub:'Подпишитесь на бота — он напомнит отметить привычки в удобное вам время',
+        list:['Напоминание в выбранное вами время','Тихие часы: ночью бот не побеспокоит','Открыть трекер можно в один тап из чата'],
+        btn:'Подписаться на бота',skip:'Пропустить'},
+    en:{emoji:'🔔',title:'Habit reminders in Telegram',
+        sub:'Subscribe to the bot and it will remind you to check in your habits at a time you choose',
+        list:['A reminder at the time you pick','Quiet hours: no messages at night','Open the tracker in one tap from the chat'],
+        btn:'Subscribe to the bot',skip:'Skip'}
+  };
+  function seen(){try{return localStorage.getItem(KEY)==='1'}catch(e){return false}}
+  function mark(){try{localStorage.setItem(KEY,'1')}catch(e){}}
+  function lang(){try{return(typeof appLang!=='undefined'&&appLang==='en')?'en':'ru'}catch(e){return'ru'}}
+  function botName(){var c=window.HABITS_CONF||{};return c.bot||BOT_FALLBACK}
+  if(seen())return;
+  var ov=document.getElementById('offerOverlay');
+  function close(){mark();ov.classList.remove('show');setTimeout(function(){ov.style.display='none'},300)}
+  function open(){
+    var o=OFFER[lang()];
+    document.getElementById('offerEmoji').textContent=o.emoji;
+    document.getElementById('offerTitle').textContent=o.title;
+    document.getElementById('offerSub').textContent=o.sub;
+    document.getElementById('offerList').innerHTML=o.list.map(function(s){return'<li>'+s+'</li>'}).join('');
+    document.getElementById('offerBtn').textContent=o.btn;
+    document.getElementById('offerSkip').textContent=o.skip;
+    requestAnimationFrame(function(){ov.classList.add('show')});
+  }
+  /* Кнопка: открываем бота со start=from_app (в Telegram — нативно, в браузере — новая вкладка) */
+  document.getElementById('offerBtn').onclick=function(){
+    var url='https://t.me/'+botName()+'?start=from_app',tg=window.Telegram&&window.Telegram.WebApp;
+    close();
+    try{if(tg&&tg.openTelegramLink){tg.openTelegramLink(url);return}}catch(e){}
+    window.open(url,'_blank');
+  };
+  document.getElementById('offerSkip').onclick=close;
+  /* Ждём, пока приложение отрисуется (Telegram-слой может грузить данные из облака), затем показываем */
+  /* Показываем после того, как приложение отрисовалось И онбординг пройден */
+  function onbDone(){try{return localStorage.getItem('onboarding_seen_v1')==='1'}catch(e){return true}}
+  var iv=setInterval(function(){
+    var c=document.getElementById('content');
+    if(seen()){clearInterval(iv);return}
+    if(c&&c.innerText.trim().length>5&&onbDone()){clearInterval(iv);setTimeout(open,400)}
+  },200);
 })();
 </script>
 </body>
